@@ -8,7 +8,7 @@ import { ExecuteAction,
          ExecuteCodeAction,
          InterpolateValueAction,
          SetValueAction,
-         SetStateAction} from "@babylonjs/core/Actions";
+         SetStateAction } from "@babylonjs/core/Actions";
 
 import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Vector3 } from "@babylonjs/core/Maths/math";
@@ -41,49 +41,71 @@ export class Game{
       
      */
     constructor(canvasElement){
-        console.log("Instantiante a new Game instance...");
+        console.log("[constructor(canvasElement){...]");
 
         this._meshesInScene = [];
-        this._sceneKeyEvent = []; //object for multiple key presses
+        this._sceneKeyEvent = {}; //object for multiple key presses
         
         this._canvas = canvasElement;
         this._engine = new Engine(canvasElement);
         this._scene =  new Scene(this._engine);
+        this._sceneSetup();
+        
         this._camera = new FreeCamera("camera1", new Vector3(1, 5, -40), this._scene);
         this._light = new HemisphericLight("light1", new Vector3(0, 1, 0), this._scene);
         this._material = new GridMaterial("grid", this._scene);
-        this._sceneSetup();
+
         this._cameraSetup();
         this._lightSetup();
         this._materialSetup();
                 
-       
-
-        this._meshesInScene.forEach((m) => this._setOnPointerObservable(m));
         this._runEngineRender();
-        MenuGUI.showGui();
+
+        new MenuGUI(this).showGui();
+
+
+        //when this game instance start() is calling
+        //this_starteAt is setted with new Date();
+        //and
+        //this_finished when game is finished
+        //game os finished when all spheres are double clicqued
+        this._startedAt = null;
+        this._finishedAt = null;
+        this._nomeDoAluno = null;
+        this._db = null; //on startup game we will create db
+        
+        console.log("[constructor(canvasElement){...]");
     }
 
+    
     _materialSetup(){
-        
+        console.log("[_materialSetup(){...]");
+        console.log("[_materialSetup(){...]");
     }
+
     
     _lightSetup(){
+        console.log("[_lightSetup(){...]");
         this._light.intensity = 0.7;
+        console.log("[_lightSetup(){...]");
     }
 
+    
     _cameraSetup(){
+        console.log("[_cameraSetup(){...]");
         this._camera.setTarget(Vector3.Zero());
         this._camera.attachControl(this._canvas, true);
+        console.log("[_cameraSetup(){...]");
     }
 
 
     _sceneSetup(){
-        console.log("_sceneSetup(){..");
+        console.log("[_sceneSetup(){..]");
 
         this._scene.clearColor = new Color3(0.5, 0.8, 0.5);
         this._scene.actionManager = new ActionManager(this._scene);
 
+        console.log("[_sceneSetup(){..] -> this._scene.actionManager.registerActions...");
         this._scene.actionManager.registerAction(
             new ExecuteCodeAction(
                 ActionManager.OnKeyDownTrigger,
@@ -106,8 +128,8 @@ export class Game{
                 }));
         
         /****************************Move Sphere*******************************/
-        
-        this._scene.registerAfterRender(function () {
+        console.log("[_sceneSetup(){..] -> this._scene.registerAfterRender(function () {...");
+        this._scene.registerAfterRender(() => {
             
             if ((this._sceneKeyEvent["q"] || this._sceneKeyEvent["Q"])) {
                 this._meshesInScene.forEach((sph) => sph.position.z += 0.1);
@@ -133,18 +155,29 @@ export class Game{
                 this._meshesInScene.forEach((sph) => sph.position.y += 0.1);
             };
         });
-        
-    }
+        console.log("[_sceneSetup(){..]");
+    }//_sceneSetup(){
     
 
-    _runEngineRender(){    
+    _runEngineRender(){
         this._engine.runRenderLoop(() => {
             this._scene.render();
-        });        
+        });
     }
 
 
     createSpheres(fase,sizeOfSphere){
+
+        //before createing new spheres, we remove from scene the existents
+        //and reinicitialize the its arrays
+        this._meshesInScene.forEach((m,i) => {
+            m.dispose();
+        });
+        delete this._meshesInScene;
+        this._meshesInScene = [];
+
+        //this._meshesInScene = new Array();
+        console.log("[createSpheres(fase,sizeOfSphere){...]"+this._meshesInScene.length);
         let sphereMat = new StandardMaterial("sphereStandardMaterial", this._scene);
         sphereMat.diffuseColor = new Color3(0.4, 0.4, 0.4);
         sphereMat.specularColor = new Color3(0.4, 0.4, 0.4);
@@ -178,6 +211,7 @@ export class Game{
             sphere4.position.y = -10;
             sphere4.position.z = 0;
             this._meshesInScene.push(sphere4);
+            this._meshesInScene.forEach((m) => this._setOnPointerObservable(m));
             
         }else if(fase == 2){
             
@@ -232,7 +266,7 @@ export class Game{
             sphere8.position.y = -5;
             sphere8.position.z = 0;
             this._meshesInScene.push(sphere8);
-            
+            this._meshesInScene.forEach((m) => this._setOnPointerObservable(m));
             
         }else if(fase == 3){
             
@@ -268,7 +302,7 @@ export class Game{
             let ground = Mesh.CreateGround("ground1", 56, 56, 2, this._scene);
             ground.material = this._material;
             ground.position.y = -15
-            
+            this._meshesInScene.forEach((m) => this._setOnPointerObservable(m));
             
         }else if(fase == 4){
             //8 spheres in each corner
@@ -328,7 +362,8 @@ export class Game{
             let ground = Mesh.CreateGround("ground1", 56, 56, 2, this._scene);
             ground.material = this._material;
             ground.position.y = -15
-            
+            console.log("[createSpheres(fase,sizeOfSphere){...]");
+            this._meshesInScene.forEach((m) => this._setOnPointerObservable(m));
         }
         
         /*
@@ -346,7 +381,7 @@ export class Game{
           scene);
         */
         
-        meshesInScene.forEach((m) => {
+        this._meshesInScene.forEach((m) => {
             m.material = sphereMat;
             m.actionManager = new ActionManager(this._scene);
             m.actionManager.registerAction(new ExecuteCodeAction(
@@ -359,22 +394,26 @@ export class Game{
         //setMeshActAsButton(sphere, Color3.Green(), light);
         
         //var myBox = MeshBuilder.CreateBox(
-        //    "myBox",
+        //    "myBox"
         //    {height: 5, width: 2, depth: 0.5},
         //    scene);
         // Move the sphere upward 1/2 its height 
     }
     
-    _setOnPointerObservable(obj,fn){
+    _setOnPointerObservable(obj){
+        console.log("_setOnPointerObservable(obj){...");
         this._scene.onPointerObservable.add((pointerInfo) => {
             switch (pointerInfo.type) {
+
             case PointerEventTypes.POINTERDOWN:
 	        console.log("POINTER DOWN");
                 obj.isPickable = true;
 	        this._scene.constantlyUpdateMeshUnderPointer = true;	
-                window.addEventListener("dblclick", function (e) {	    
+                window.addEventListener("dblclick", (e) => {	    
 		    if (this._scene.meshUnderPointer === obj) {
+                        console.log(this._meshesInScene.length);
                         obj.dispose();
+                        console.log(this._meshesInScene.length);
 		    }
 	        });
 	        break;
@@ -401,43 +440,8 @@ export class Game{
     }//_setOnPointerObservable(obj,fn){
 
 
-    _setOnPointerObservable(obj,fn){
-        this._scene.onPointerObservable.add((pointerInfo) => {
-            switch (pointerInfo.type) {
-            case PointerEventTypes.POINTERDOWN:
-	        console.log("POINTER DOWN");
-                obj.isPickable = true;
-	        this._scene.constantlyUpdateMeshUnderPointer = true;	
-                window.addEventListener("dblclick", function (e) {	    
-		    if (this._scene.meshUnderPointer === obj) {
-                        obj.dispose();
-		    }
-	        });
-	        break;
-            case PointerEventTypes.POINTERUP:
-	        console.log("POINTER UP");
-	        break;
-            case PointerEventTypes.POINTERMOVE:
-	        console.log("POINTER MOVE");
-	        break;
-            case PointerEventTypes.POINTERWHEEL:
-	        console.log("POINTER WHEEL");
-	        break;
-            case PointerEventTypes.POINTERPICK:
-	        console.log("POINTER PICK");
-	        break;
-            case PointerEventTypes.POINTERTAP:
-	        console.log("POINTER TAP");
-	        break;
-            case PointerEventTypes.POINTERDOUBLETAP:
-	        console.log("POINTER DOUBLE-TAP");
-	        break;
-            }
-        })
-    }//_setOnPointerObservable
-    
-
     _setOnKeyboardObservable(obj){
+        console.log("_setOnKeyboardObservable(obj){...");
         obj.onKeyboardObservable.add((kbInfo) => {
             switch (kbInfo.type) {
             case KeyboardEventTypes.KEYDOWN:
@@ -454,10 +458,12 @@ export class Game{
     
     //getters and setters
     getEngine(){
+        console.log("getEngine(){...");
         return this._scene;
     }
 
     getScene(){
+        console.log("getScene(){...");
         return this._scene;
     }
 
@@ -465,15 +471,37 @@ export class Game{
     /*      
       Show initial GUI
      */
-    start(){
-        console.log("start = () => {...");
+    start(nomeDoAluno){
+        console.log("start(nomeDoAluno){..."+nomeDoAluno);
+
+        delete this._nomeDoAluno;
+        this._nomeDoAluno = nomeDoAluno;
+        
+        delete this._startedAt;
+        this._startedAt = new Date();
+
+        if (this._db == null || this._db == undefined){
+            this._db = openDatabase('clickduplodb', '1.0', 'clickduplo game db', 2 * 1024 * 1024);
+            this._db.transaction((tx) => {   
+                tx.executeSql('CREATE TABLE IF NOT EXISTS tb_clickduplo (id INTEGER AUTOINCREMENT, aluno text, startedAt , finishedAt, timeSeconds)'); 
+            });
+        }
+                
+        this._db.transaction(function (tx) { 
+            tx.executeSql('INSERT INTO tb_clickduplo (aluno, startedAt, finishedAt, timeSeconds) VALUES ('+ this._nomeDoAluno +', datetime(\'now\'))'); 
+        }); 
+        
     }
 
+    finished(){
+        //this._fin
+    }
     
     /*
       size: size of the axis
      */
     showWorldAxis(size) {
+        console.log("showWorldAxis(size) {...");
         showWorldAxis(size,this._scene);
     }
 }
